@@ -1,0 +1,8 @@
+setuptools
+pysrt
+moviepy
+datetime 
+numpy==1.24
+opencv-python
+minio
+requests
