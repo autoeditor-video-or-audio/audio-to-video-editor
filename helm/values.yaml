@@ -3,11 +3,29 @@ component: autoeditor-video-or-audio
 core: autoeditor
 version: 1.0.1
 
-cronjob:
-  schedule: "* * * * *"
+deployment:
+  replicas: 1
+  sendlogs: "true"
   env:
     - name: "TZ"
       value: "America/Sao_Paulo"
+    # rabbitmq
+    - name: RABBITMQ_HOST
+      value: "svc-rabbitmq.rabbitmq.svc.cluster.local"
+    - name: RABBITMQ_PORT
+      value: "5672"
+    - name: RABBITMQ_VHOST
+      value: "syrin"
+    - name: RABBITMQ_USER
+      valueFrom:
+        secretKeyRef:
+          name: s-rabbitmq
+          key: RABBITMQ_DEFAULT_USER
+    - name: RABBITMQ_PASS
+      valueFrom:
+        secretKeyRef:
+          name: s-rabbitmq
+          key: RABBITMQ_DEFAULT_PASS
     #minio
     - name: MINIO_URL
       value: "svc-minio-api.minio.svc.cluster.local"
@@ -27,15 +45,13 @@ cronjob:
     - exec: "python"
     - exec: "main.py"
   resources:
+    requests:
+      memory: "128Mi"
+      cpu: "200m"
     limits:
-      memory: "6Gi"
+      memory: "2Gi"
       cpu: "4.0"
   affinity:
     hosts:
       - name: k8s-03
       - name: k8s-04
-  restartPolicy: OnFailure
-  ttlSecondsAfterFinished: 7200
-  concurrencyPolicy: Forbid
-  successfulJobsHistoryLimit: 1
-  failedJobsHistoryLimit: 2

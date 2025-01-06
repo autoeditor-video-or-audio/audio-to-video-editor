@@ -1,8 +1,7 @@
 setuptools
-pysrt
 moviepy
 datetime 
 numpy==1.24
-opencv-python
 minio
 requests
+pika==1.3.2
