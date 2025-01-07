@@ -48,7 +48,8 @@ def connect_to_rabbitmq():
             port=rabbitmq_port,
             virtual_host=rabbitmq_vhost,
             credentials=credentials,
-            heartbeat=900  # Mantém a conexão ativa (900 segundos)
+            heartbeat=120,  # Aumentar o tempo do heartbeat
+            blocked_connection_timeout=1800
         )
         return pika.BlockingConnection(parameters)
     except Exception as e:
