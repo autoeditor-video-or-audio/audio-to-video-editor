@@ -18,3 +18,5 @@ COPY ./app/ .
 
 # Definir o ponto de entrada para o script principal
 # ENTRYPOINT ["python3", "run.py"]
+
+# docker rm -f pod && docker run -ti --name pod -v ./app:/app/ --env-file env.list atve bash

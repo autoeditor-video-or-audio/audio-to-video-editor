@@ -48,6 +48,7 @@ def connect_to_rabbitmq():
             port=rabbitmq_port,
             virtual_host=rabbitmq_vhost,
             credentials=credentials,
+            heartbeat=900  # Mantém a conexão ativa (900 segundos)
         )
         return pika.BlockingConnection(parameters)
     except Exception as e:
@@ -79,11 +80,11 @@ def getTimeCropBackgroundMovie(background_duration, audio_duration):
     end_time = start_time + audio_duration
     return round(start_time, 2), round(end_time, 2)
 
-def download_random_background_video():
+def download_random_background_video(file_category):
     """Baixa um vídeo de fundo aleatório do bucket MinIO."""
     bucketSet = "moviebackground"
-    logger.info(f"Verificando arquivos no bucket: {bucketSet}/vertical/")
-    objects = list(client.list_objects(bucketSet, prefix="vertical/"))
+    logger.info(f"Verificando arquivos no bucket: {bucketSet}/vertical/{file_category}")
+    objects = list(client.list_objects(bucketSet, prefix=f"vertical/{file_category}/"))
 
     if not objects:
         logger.error("Nenhum arquivo de fundo encontrado no bucket.")
@@ -100,12 +101,12 @@ def download_random_background_video():
         logger.error(f"Erro ao baixar o arquivo de fundo: {e}")
         return None
 
-def createVideoByAudio(audioName, pathName):
+def createVideoByAudio(audioName, pathName, file_category):
     """Cria um vídeo com base no áudio recebido."""
     try:
         logger.info(f"{audioName} Criando vídeo com base no tempo do áudio...")
 
-        background_video_path = download_random_background_video()
+        background_video_path = download_random_background_video(file_category)
         if not background_video_path:
             logger.error("Erro ao baixar o vídeo de fundo. Processo abortado.")
             return
@@ -148,6 +149,7 @@ def process_message(message):
     try:
         bucket_path = message.get("bucket_path")
         file_name = message.get("file_name")
+        file_category = message.get("category")
 
         if not bucket_path or not file_name:
             logger.error("Mensagem inválida. Campos obrigatórios ausentes.")
@@ -158,7 +160,7 @@ def process_message(message):
         download_file_from_minio(bucket_path, local_audio_path)
 
         # Processar vídeo com base no áudio
-        success = createVideoByAudio(file_name, bucket_path)
+        success = createVideoByAudio(file_name, bucket_path, file_category)
         
         if not success:
             logger.error("Erro ao criar o vídeo. Mensagem não será removida da fila.")
