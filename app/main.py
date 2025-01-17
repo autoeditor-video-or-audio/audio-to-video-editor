@@ -102,6 +102,31 @@ def download_random_background_video(file_category):
         logger.error(f"Erro ao baixar o arquivo de fundo: {e}")
         return None
 
+def publish_to_queue(queue_name, message):
+    """Publica uma mensagem na fila especificada do RabbitMQ."""
+    connection = connect_to_rabbitmq()
+    if connection is None:
+        logger.error("Não foi possível conectar ao RabbitMQ para publicar mensagem.")
+        return False
+
+    try:
+        channel = connection.channel()
+        channel.queue_declare(queue=queue_name, durable=True)
+        channel.basic_publish(
+            exchange="",
+            routing_key=queue_name,
+            body=json.dumps(message),
+            properties=pika.BasicProperties(delivery_mode=2)  # Mensagem persistente
+        )
+        logger.info(f"Mensagem publicada na fila {queue_name}: {message}")
+        return True
+    except Exception as e:
+        logger.error(f"Erro ao publicar mensagem na fila {queue_name}: {e}")
+        return False
+    finally:
+        connection.close()
+
+# Ajuste na função `createVideoByAudio` para incluir a publicação na fila `03_mp3_to_video`
 def createVideoByAudio(audioName, pathName, file_category):
     """Cria um vídeo com base no áudio recebido."""
     try:
@@ -133,12 +158,27 @@ def createVideoByAudio(audioName, pathName, file_category):
         upload_path = f"processed-videos/{output_filename}"
         postFileInBucket(client, bucketSet, upload_path, output_path, 'video/mp4')
 
+        # Publicar mensagem na fila `03_mp3_to_video` no formato especificado
+        process_start_date = datetime.now().isoformat()
+        file_name_highlight = output_filename.rsplit(".", 1)[0]
+        segment_data = {
+            "file_format": "mp3",
+            "file_name": f"{file_name_highlight}.mp3",
+            "bucket_path": f"processed-videos/{file_name_highlight}.mp3",
+            "process_start_date": process_start_date,
+            "category": file_category,
+        }
+        if publish_to_queue("03_mp3_to_video", segment_data):
+            logger.info("Mensagem publicada na fila 03_mp3_to_video com sucesso.")
+        else:
+            logger.error("Erro ao publicar mensagem na fila 03_mp3_to_video.")
+
         # Remove o arquivo de áudio original
         logger.info(f"Removendo o arquivo de áudio {audioName} do bucket {bucketSet}.")
         client.remove_object(bucketSet, f"{pathName}/{audioName}")
         return True
     except Exception as exc:
-        logger.error(f"Erro ao remover o arquivo {audioName} do bucket: {exc}")
+        logger.error(f"Erro ao processar {audioName}: {exc}")
         return False
     finally:
         # Remove diretórios temporários
