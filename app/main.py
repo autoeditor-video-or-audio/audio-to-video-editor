@@ -162,9 +162,9 @@ def createVideoByAudio(audioName, pathName, file_category):
         process_start_date = datetime.now().isoformat()
         file_name_highlight = output_filename.rsplit(".", 1)[0]
         segment_data = {
-            "file_format": "mp3",
-            "file_name": f"{file_name_highlight}.mp3",
-            "bucket_path": f"processed-videos/{file_name_highlight}.mp3",
+            "file_format": "mp4",
+            "file_name": f"{file_name_highlight}.mp4",
+            "bucket_path": f"processed-videos/{file_name_highlight}.mp4",
             "process_start_date": process_start_date,
             "category": file_category,
         }
