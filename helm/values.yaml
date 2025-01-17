@@ -1,7 +1,7 @@
 app: audio-to-video-editor
 component: autoeditor-video-or-audio
 core: autoeditor
-version: 1.0.5
+version: 1.0.6
 
 deployment:
   replicas: 1
