@@ -169,7 +169,7 @@ def createVideoByAudio(audioName, pathName, file_category):
             "category": file_category,
         }
         if publish_to_queue("03_mp3_to_video", segment_data):
-            logger.info("Mensagem publicada na fila 03_mp3_to_video com sucesso.")
+            logger.info("Mensagem publicada na fila 03_mp3_to_video com sucesso.")            
         else:
             logger.error("Erro ao publicar mensagem na fila 03_mp3_to_video.")
 
@@ -203,7 +203,11 @@ def process_message(message):
         # Processar vídeo com base no áudio
         success = createVideoByAudio(file_name, bucket_path, file_category)
         
-        if not success:
+        if success:
+            # Remove o arquivo de áudio original
+            client.remove_object(bucketSet, f"{bucket_path}")
+            logger.info(f"Arquivo: {bucket_path} foi deletado com sucesso do bucket: {bucketSet}.")    
+        else:
             logger.error("Erro ao criar o vídeo. Mensagem não será removida da fila.")
             return
     except Exception as e:
