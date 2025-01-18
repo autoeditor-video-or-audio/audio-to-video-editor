@@ -225,11 +225,12 @@ def consume_messages():
             try:
                 ch.basic_ack(delivery_tag=method.delivery_tag)
                 logger.info("Mensagem processada com sucesso e removida da fila.")
+                logger.info("...end...")
             except Exception as e:
                 logger.error(f"Erro ao confirmar processamento da mensagem: {e}")
 
         channel.basic_consume(queue=rabbitmq_queue, on_message_callback=callback)
-        logger.info("Aguardando mensagens na fila...")
+        logger.info(f"Aguardando mensagens na fila: {rabbitmq_queue} ...")
         channel.start_consuming()
     except Exception as e:
         logger.error(f"Erro ao consumir mensagens: {e}")
